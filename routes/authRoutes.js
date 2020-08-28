@@ -24,7 +24,7 @@ router.post('/login',async(req,res)=>{
       expiresIn: process.env.JWT_EXPIRES_IN,
     });
     console.log(`Generated Token: ${token}`);
-    console.log('Login Successful');
+    res.json({message:'Login Successful'})
     console.log(result);
   })
 });
