@@ -4,13 +4,16 @@ const app = express();
 const bodyParser = require('body-parser');
 const db = require('./database');
 const authRoutes = require('./routes/authRoutes');
+const dotenv = require('dotenv');
 
+
+dotenv.config({ path: './.env'});
 app.use(bodyParser.json());
 app.use(authRoutes);
 
 // ENV variables
-const hostName ='127.0.0.1';
-const PORT = 3000;
+const hostName =process.env.HOSTNAME;
+const PORT = process.env.PORT;
 
 app.get('/',(req,res)=>{
   res.send("hello");
@@ -38,5 +41,5 @@ app.get('/',(req,res)=>{
 // });
 
 app.listen(PORT,()=>{
-  console.log(`Server running at http://${hostName}:${PORT}/`);
+  console.log(`Server running at http://${process.env.HOSTNAME}:${process.env.PORT}/`);
 });
