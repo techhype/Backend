@@ -1,26 +1,29 @@
 const express = require('express'); 
 const db = require('../database');
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
 const router = express.Router();
 
 
-
 router.post('/login',async(req,res)=>{
   const { email, password } = req.body;
-  if (!email || !password) {
-    return res.status(400).render('login', {
-      message: 'Please provide both Email and Password'
-    })
+  if (!email || !password || email=='' || password == '') {
+    res.json({error:'Pleaase provide both Email and Password'});
+    return;
   }
   let sql = `SELECT * FROM user WHERE email=?`;
   db.query(sql, [email], async (err, result) => {
     if (!result || !(await bcrypt.compare(password, result[0].password))) {
-      console.log("Sign in error");
-      res.status(400).render('login', {
-        message: 'Email or Password is Incorrect'
-      })
+      res.json({ error: 'Email or Password is Incorrect' });
+      return;
     }
+    const id = result[0].insertId;
+    console.log(process.env.JWT_SECRET,process.env.JWT_EXPIRES_IN);
+    const token = jwt.sign({ id }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRES_IN,
+    });
+    console.log(`Generated Token: ${token}`);
     console.log('Login Successful');
     console.log(result);
   })
@@ -29,13 +32,13 @@ router.post('/login',async(req,res)=>{
 router.post('/signup',async(req,res)=>{
   const { username, email, password, mnumber } = req.body;
   db.query('SELECT email FROM user WHERE email=? ', [email], async (err, result) => {
-  if (err) {
+  if(err){
     console.log(err);
+    return;
   }
   if (result.length > 0) {
-    return res.render('signup', {
-      message: 'Email ID already in use :/'
-    })
+    res.json({error:'Email id already in use!!'});
+    return;
   }
   let hashedPassword = await bcrypt.hash(password, 8);
   let sql = 'INSERT INTO user SET ?';
@@ -43,7 +46,7 @@ router.post('/signup',async(req,res)=>{
     if (err) throw err;
     console.log(`Row inserted successfully ${result}`);
   });
-  });
+  }); 
 });
 
 module.exports = router;
