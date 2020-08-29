@@ -19,12 +19,11 @@ router.post('/login',async(req,res)=>{
       return;
     }
     const id = result[0].insertId;
-    console.log(process.env.JWT_SECRET,process.env.JWT_EXPIRES_IN);
-    const token = jwt.sign({ id }, process.env.JWT_SECRET, {
+    const token = await jwt.sign({ id }, process.env.JWT_SECRET, {
       expiresIn: process.env.JWT_EXPIRES_IN,
     });
     console.log(`Generated Token: ${token}`);
-    res.json({message:'Login Successful'})
+    res.json({token})
     console.log(result);
   })
 });
@@ -32,20 +31,26 @@ router.post('/login',async(req,res)=>{
 router.post('/signup',async(req,res)=>{
   const { username, email, password, mnumber } = req.body;
   db.query('SELECT email FROM user WHERE email=? ', [email], async (err, result) => {
-  if(err){
-    console.log(err);
-    return;
-  }
-  if (result.length > 0) {
-    res.json({error:'Email id already in use!!'});
-    return;
-  }
-  let hashedPassword = await bcrypt.hash(password, 8);
-  let sql = 'INSERT INTO user SET ?';
-  db.query(sql, { username, email, password: hashedPassword, mnumber }, (err, result) => {
-    if (err) throw err;
-    console.log(`Row inserted successfully ${result}`);
-  });
+    if(err){
+      console.log(err);
+      return;
+    }
+    if (result.length > 0) {
+      res.json({error:'Email id already in use!!'});
+      return;
+    }
+    let hashedPassword = await bcrypt.hash(password, 8);
+    let sql = 'INSERT INTO user SET ?';
+    db.query(sql, { username, email, password: hashedPassword, mnumber }, async (err, result) => {
+      if (err) throw err;
+      console.log(`Row inserted successfully ${result}`);
+      // res.json({message:'Created an Account'});  
+      const id = result.insertId;
+      const token = await jwt.sign({ id }, process.env.JWT_SECRET, {
+        expiresIn: process.env.JWT_EXPIRES_IN,
+      });
+      res.json({token,email});
+    });
   }); 
 });
 
